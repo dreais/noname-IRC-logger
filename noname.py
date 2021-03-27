@@ -13,6 +13,12 @@ irc.connect(('irc.ppy.sh', 6667))
 irc.send(bytes("PASS " + passwd + "\r\n", 'UTF-8'))
 irc.send(bytes("NICK " + botnick + "\r\n", 'UTF-8'))
 
+
+def send_data(command):
+    res = irc.send(bytes(command + "\r\n", 'UTF-8'))
+    print("[" + command + "] returned " + str(res))
+
+
 for channel in channels:
     send_data("JOIN #" + channel)
 
@@ -49,11 +55,6 @@ def handle_privmsg(line):
             f = codecs.open('private_msg.txt', 'a', 'utf-8-sig')
             f.write(time + nickname + ':' + content + '\n')
             f.close()
-
-
-def send_data(command):
-    res = irc.send(bytes(command + "\r\n", 'UTF-8'))
-    print("[" + command + "] returned " + str(res))
 
 
 """
