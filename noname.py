@@ -112,7 +112,7 @@ f = open(PROCESS_ALIVE, 'w')
 while thread_on:
     t = time.localtime()
     f.write(time.strftime("%H:%M:%S", t))
-    sleep(60 * 5)
+    time.sleep(60 * 5)
 
 f.close()
 
