@@ -9,18 +9,18 @@ from config import botnick, passwd, channels
     connection, authentification, channels
 """
 irc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-irc.connect(('irc.ppy.sh', 6667))
-irc.send(bytes("PASS " + passwd + "\r\n", 'UTF-8'))
-irc.send(bytes("NICK " + botnick + "\r\n", 'UTF-8'))
-
-
 def send_data(command):
     res = irc.send(bytes(command + "\r\n", 'UTF-8'))
     print("[" + command + "] returned " + str(res))
 
 
-for channel in channels:
-    send_data("JOIN #" + channel)
+def login():
+    irc.connect(('irc.ppy.sh', 6667))
+    irc.send(bytes("PASS " + passwd + "\r\n", 'UTF-8'))
+    irc.send(bytes("NICK " + botnick + "\r\n", 'UTF-8'))
+    for channel in channels:
+        send_data("JOIN #" + channel)
+
 
 """
     VARIABLES
@@ -33,19 +33,19 @@ PROCESS_ALIVE = 'PROCESS_ALIVE'
     N/A
 """
 def handle_privmsg(line):
-    try:
-        channel = line[11:].split('#')[1].split(' ')[0]
+    try: # [YYYY-mm-dd HH:MM:SS] -> 21
+        channel = line[22:].split('#')[1].split(' ')[0]
     except IndexError:
         channel = 'limbo'
     try:
-        content = line[12:].split('!')[1].split(':')[1]
+        content = line[23:].split('!')[1].split(':')[1]
     except IndexError:
         content = '# EMPTY CONTENT'
     try:
-        nickname = line[12:].split('!')[0]
+        nickname = line[23:].split('!')[0]
     except IndexError:
         nickname = 'NO_USER'
-    time = line[:11]
+    time = line[:22]
     for x in channels:
         if channel == x:
             f = codecs.open(channel + '.txt', 'a', 'utf-8-sig')
@@ -62,6 +62,7 @@ def handle_privmsg(line):
 """
 def Listener():
     global thread_on
+    login()
     while thread_on:
         try:
             msg = irc.recv(2040)
@@ -73,7 +74,7 @@ def Listener():
         if msg:
             for line in msg:
                 t = time.localtime()
-                strtime = '[' + time.strftime("%H:%M:%S", t) + '] '
+                strtime = '[' + time.strftime("%Y-%m-%d %H:%M:%S", t) + '] '
                 if 'PING' in line:
                     irc.send(bytes('PONG cho.ppy.sh\r\n', 'UTF-8'))
                     print(strtime + 'PONG!')
@@ -99,9 +100,12 @@ def InputReader():
     THREADING
 """
 listening = threading.Thread(target=Listener)
-listening.start()
 inputreader = threading.Thread(target=InputReader)
-inputreader.start()
+def manage_thread():
+    if not listening.is_alive():
+        listening.start()
+    if not inputreader.is_alive():
+        inputreader.start()
 
 
 """
@@ -112,7 +116,8 @@ f = open(PROCESS_ALIVE, 'w')
 while thread_on:
     t = time.localtime()
     f.write(time.strftime("%H:%M:%S", t))
-    time.sleep(60 * 5)
+    manage_thread()
+    time.sleep(60)
 
 f.close()
 
