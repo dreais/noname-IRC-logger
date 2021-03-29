@@ -39,7 +39,13 @@ def handle_privmsg(line):
     except IndexError:
         channel = '# limbo'
     try:
-        content = line[23:].split('!')[1].split(':')[1]
+        content = ''
+        count = 0
+        for element in line[23:].split(':'):
+            count += 1
+            if count == 1:
+                continue
+            content += element
     except IndexError:
         content = '# EMPTY CONTENT'
     try:
