@@ -26,6 +26,7 @@ def login():
     VARIABLES
 """
 thread_on = True
+listener_restart = False
 PROCESS_ALIVE = 'PROCESS_ALIVE'
 
 
@@ -36,7 +37,7 @@ def handle_privmsg(line):
     try: # [YYYY-mm-dd HH:MM:SS] -> 21
         channel = line[22:].split('#')[1].split(' ')[0]
     except IndexError:
-        channel = 'limbo'
+        channel = '# limbo'
     try:
         content = line[23:].split('!')[1].split(':')[1]
     except IndexError:
@@ -44,7 +45,7 @@ def handle_privmsg(line):
     try:
         nickname = line[23:].split('!')[0]
     except IndexError:
-        nickname = 'NO_USER'
+        nickname = '# NO_USER'
     time = line[:22]
     for x in channels:
         if channel == x:
@@ -61,11 +62,13 @@ def handle_privmsg(line):
     Listener(): FUNCTION USED BY THREAD 1 TO RECEIVE FROM SERVER
 """
 def Listener():
-    global thread_on
     login()
-    while thread_on:
+    global thread_on
+    while thread_on and listener_restart == False:
         try:
             msg = irc.recv(2040)
+            if len(msg) == 0:
+                login()
             msg = msg.decode('UTF-8').split('\n')
         except UnicodeDecodeError:
             print(msg)
@@ -92,6 +95,8 @@ def InputReader():
         cmd = input()
         if 'QUIT' in cmd:
             thread_on = False
+        elif 'RESTART' in cmd:
+            pass
         else:
             print('> ' + cmd)
 
@@ -101,8 +106,11 @@ def InputReader():
 """
 listening = threading.Thread(target=Listener)
 inputreader = threading.Thread(target=InputReader)
-def manage_thread():
+def manage_thread(arg=''):
+    global listener_restart
+    global listening
     if not listening.is_alive():
+        listening = threading.Thread(target=Listener())
         listening.start()
     if not inputreader.is_alive():
         inputreader.start()
